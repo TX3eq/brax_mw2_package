@@ -12,13 +12,15 @@ _init()
     setDvarIfUninitialized("first_blood", 0); //Enables/Disabled First Blood
     level setClientDvar("g_teamcolor_myteam", "0.501961 0.8 1 1" ); 	
     level setClientDvar("g_teamTitleColor_myteam", "0.501961 0.8 1 1" );
+    setDvar("g_teamcolor_myteam", "0.501961 0.8 1 1" ); 	
+    setDvar("g_teamTitleColor_myteam", "0.501961 0.8 1 1" );
     setDvar("safeArea_adjusted_horizontal", 0.85);
     setDvar("safeArea_adjusted_vertical", 0.85);
     setDvar("safeArea_horizontal", 0.85);
     setDvar("safeArea_vertical", 0.85);
     setDvar("scr_sd_multibomb", "1");
     setDvar("ui_streamFriendly", true);
-    setDvar("jump_slowdownEnable", 1); //Removes Jump Fatigue
+    setDvar("jump_slowdownEnable", 0); //Removes Jump Fatigue
     setDvar("bg_surfacePenetration", 9999); //Wallbang Everything
     setDvar("bg_bulletRange", 99999); //No Bullet Trail Limit
 
@@ -125,6 +127,27 @@ on_player_spawn()
                 self thread ez_prone_cmd();
             else
                 self notify("stop_prone");
+
+            if(self.pers["smooth_action"])
+                self thread do_smooth_actions();
+            else
+                self notify("stop_smooth");
+
+			/* DVARS */
+			if(self.pers["console_hud"])
+			{
+				self setClientDvar( "cg_overheadiconsize" , 1);
+				self setClientDvar( "cg_overheadnamesfont" , 3);
+				self setClientDvar( "cg_overheadnamessize" , 0.6);
+				self setClientDvar("g_teamcolor_myteam", "0.501961 0.8 1 1" ); 	
+				self setClientDvar("g_teamTitleColor_myteam", "0.501961 0.8 1 1" );
+			} else {
+				self setClientDvar( "cg_overheadiconsize" , 0.7);
+				self setClientDvar( "cg_overheadnamesfont" , 2);
+				self setClientDvar( "cg_overheadnamessize" , 0.5);
+				self setClientDvar("g_teamcolor_myteam", "0.501961 0.8 1 1" ); 	
+				self setClientDvar("g_teamTitleColor_myteam", "0.501961 0.8 1 1" );
+			}
             
             self respawn_dvars();
             self VisionSetThermalForPlayer( game["nightvision"], 0 ); //Ensures Proper Reset
@@ -216,12 +239,22 @@ respawn_dvars()
         self setClientDvar( "cg_overheadnamessize" , 0.6);
         self setClientDvar("g_teamcolor_myteam", "0.501961 0.8 1 1" ); 	
         self setClientDvar("g_teamTitleColor_myteam", "0.501961 0.8 1 1" );
+        setDvar( "cg_overheadiconsize" , 1);
+        setDvar( "cg_overheadnamesfont" , 3);
+        setDvar( "cg_overheadnamessize" , 0.6);
+        setDvar("g_teamcolor_myteam", "0.501961 0.8 1 1" ); 	
+        setDvar("g_teamTitleColor_myteam", "0.501961 0.8 1 1" );
     } else {
         self setClientDvar( "cg_overheadiconsize" , 0.7);
         self setClientDvar( "cg_overheadnamesfont" , 2);
         self setClientDvar( "cg_overheadnamessize" , 0.5);
         self setClientDvar("g_teamcolor_myteam", "0.501961 0.8 1 1" ); 	
         self setClientDvar("g_teamTitleColor_myteam", "0.501961 0.8 1 1" );
+        setDvar( "cg_overheadiconsize" , 0.7);
+        setDvar( "cg_overheadnamesfont" , 2);
+        setDvar( "cg_overheadnamessize" , 0.5);
+        setDvar("g_teamcolor_myteam", "0.501961 0.8 1 1" ); 	
+        setDvar("g_teamTitleColor_myteam", "0.501961 0.8 1 1" );
     }
     self setClientDvar("safeArea_adjusted_horizontal", 0.85);
     self setClientDvar("safeArea_adjusted_vertical", 0.85);
@@ -232,6 +265,7 @@ respawn_dvars()
     self setClientDvar("intro", 0);
     self setClientDvar("cl_autorecord", 0);
     self setClientDvar("snd_enable3D", 1);
+    self setClientDvar("cg_nopredict", 0);
 }
 
 gametype_verification()
@@ -424,6 +458,7 @@ killcam_softland()
     setDvar("bg_fallDamageMinHeight", 1);
     wait 2;
     setDvar("snd_enable3D" , 0);
+    self setClientDvar("snd_enable3D" , 0);
 }
 
 instashoot_cmd()
@@ -696,17 +731,11 @@ test_new_ez_mala()
     self endon("stop_ez_mala");
     for(;;)
     {
-        self waittill("grenade_pullback", equipment);
-        my_class = self.pers["class"];
+        self waittill("grenade_pullback");
         my_weapon = self getCurrentWeapon();
-        old_ammo = self GetWeaponAmmoStock(my_weapon);
-        old_clip = self GetWeaponAmmoClip(my_weapon);
         waitframe();
-        self maps\mp\gametypes\_class::giveLoadout(self.pers["team"], my_class);
-        waitframe();
-        self switchToWeapon(my_weapon);
-        self SetWeaponAmmoStock(my_weapon, old_ammo);
-        self SetWeaponAmmoClip(my_weapon, old_clip);
+        self switchToWeaponImmediate(my_weapon);
+        self setSpawnWeapon(my_weapon);
     }
 }
 
@@ -762,13 +791,42 @@ smooth_anim_toggle()
 
 do_smooth_actions()
 {
+    self endon("stop_smooth");
     for(;;)
     {
         self notifyOnPlayerCommand("smooth", "+actionslot 2");
         self waittill("smooth");
-        altWeapon = weaponAltWeaponName( self getCurrentWeapon() );
-        waitframe();
-        self switchToWeaponImmediate(altWeapon);
+        all_weapons = self getWeaponsListPrimaries();
+        if(self getCurrentWeapon() == all_weapons[0])
+        {
+            self setClientDvar("cg_nopredict", 1);
+            waitframe();
+            self switchToWeapon(all_weapons[1]);
+            waitframe();
+            self switchToWeapon(all_weapons[0]);
+            waitframe();
+            self setClientDvar("cg_nopredict", 0);
+        }
+        else if(self getCurrentWeapon() == all_weapons[1])
+        {
+            self setClientDvar("cg_nopredict", 1);
+            waitframe();
+            self switchToWeapon(all_weapons[0]);
+            waitframe();
+            self switchToWeapon(all_weapons[1]);
+            waitframe();
+            self setClientDvar("cg_nopredict", 0);
+        }
+        else
+        {
+            self setClientDvar("cg_nopredict", 1);
+            waitframe();
+            self switchToWeapon(all_weapons[1]);
+            waitframe();
+            self switchToWeapon(all_weapons[2]);
+            waitframe();
+            self setClientDvar("cg_nopredict", 0);
+        }
     }
 }
 

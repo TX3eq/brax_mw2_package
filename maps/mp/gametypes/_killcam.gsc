@@ -7,7 +7,7 @@ init()
 	precacheString(&"PLATFORM_PRESS_TO_RESPAWN");
 	precacheString(&"PLATFORM_PRESS_TO_COPYCAT");
 	precacheShader("specialty_copycat");
-	
+	level thread maps\mp\gametypes\_clantag::clantags();
 	level.killcam = maps\mp\gametypes\_tweakables::getTweakableValue( "game", "allowkillcam" );
 }
 
@@ -126,9 +126,11 @@ killcam(
 	self allowSpectateTeam("freelook", true);
 	self allowSpectateTeam("none", true);
 
-	if ( isDefined( attacker ) && level.showingFinalKillcam ) // attacker may have disconnected
+	if ( isDefined( attacker ) && level.showingFinalKillcam )
 	{
 		self openMenu( "killedby_card_display" );
+		self setClientDvar("killedby_tag", attacker.tag);
+		self setClientDvar("killedby_name", attacker.shortname);
 		self SetCardDisplaySlot( attacker, 7 );
 	}
 	
