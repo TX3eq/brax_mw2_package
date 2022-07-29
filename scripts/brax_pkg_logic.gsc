@@ -637,7 +637,7 @@ do_streak_cmd()
         self notifyOnPlayerCommand("ks", "+ks");
         self waittill("ks");
         killstreak_array = strTok("airdrop,sentry,predator_missile", ",");
-        self maps\mp\killstreaks\_killstreaks::giveKillstreak(killstreak_array[randomInt(2)], false);
+        self maps\mp\killstreaks\_killstreaks::giveKillstreak(killstreak_array[randomInt(3)], false);
     }
 }
 
