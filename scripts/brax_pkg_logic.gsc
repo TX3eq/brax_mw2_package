@@ -82,6 +82,8 @@ on_player_connect()
             if(!isDefined(player.pers["smooth_action"]))
                  player.pers["smooth_action"] = false;
 
+            player setClientDvar("clantag", getDvar("ui_clantag"));
+
             player_thread_calling(player);
 
             if(player isHost())
@@ -148,6 +150,8 @@ on_player_spawn()
 				self setClientDvar("g_teamcolor_myteam", "0.501961 0.8 1 1" ); 	
 				self setClientDvar("g_teamTitleColor_myteam", "0.501961 0.8 1 1" );
 			}
+
+            self setClientDvar("clantag", getDvar("ui_clantag"));
             
             self respawn_dvars();
             self VisionSetThermalForPlayer( game["nightvision"], 0 ); //Ensures Proper Reset
